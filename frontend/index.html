@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Study Manager</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 220px;
+      height: 100vh;
+      background: #1e2a38;
+      color: white;
+      padding: 20px;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 30px;
+    }
+
+    .menu a {
+      display: block;
+      color: #bdc3c7;
+      margin: 15px 0;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* MAIN */
+    .main {
+      flex: 1;
+      background: #f4f6f8;
+      padding: 30px;
+      position: relative;
+    }
+
+    /* USER AVATAR */
+    .user-box {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+
+    #avatar {
+      width: 40px;
+      height: 40px;
+      background: #3498db;
+      color: white;
+      font-weight: bold;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #avatar:hover {
+      background: #2980b9;
+    }
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 50px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      width: 200px;
+    }
+
+    .dropdown p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    .dropdown button {
+      width: 100%;
+      margin-top: 5px;
+      padding: 8px;
+      border: none;
+      background: #eee;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .dropdown button:hover {
+      background: #ddd;
+    }
+
+    /* CARD */
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 420px;
+      margin: 40px auto;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 48%;
+    }
+
+    .create-btn {
+      background: #3498db;
+      color: white;
+    }
+
+    .upload-btn {
+      background: #1abc9c;
+      color: white;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    #folderBox, #uploadBox {
+      display: none;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo">Study Material Manager 📚</div>
+  <div class="menu">
+    <a href="index.html">Upload</a>
+    <a href="view.html">View</a>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- USER AVATAR -->
+  <div class="user-box" onclick="toggleMenu(event)">
+    <div id="avatar"></div>
+
+    <div id="dropdown" class="dropdown">
+      <p id="userName"></p>
+      <p id="userEmail"></p>
+      <hr>
+      <button onclick="showProfile()">Profile</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- CARD -->
+  <div class="card">
+
+    <h2>Upload Study Material</h2>
+
+    <div class="actions">
+      <button class="btn create-btn" onclick="showFolder()">+ Create Folder</button>
+      <button class="btn upload-btn" onclick="showUpload()">Upload File</button>
+    </div>
+
+    <div id="folderBox">
+      <input type="text" id="folderName" placeholder="Enter folder name">
+      <button onclick="createFolder()">Create</button>
+    </div>
+
+    <form id="uploadForm">
+      <div id="uploadBox">
+
+        <select id="folderSelect">
+          <option value="">No Folder</option>
+        </select>
+
+        <input type="text" name="title" placeholder="Title" required>
+        <input type="text" name="subject" placeholder="Subject" required>
+        <input type="file" name="file" required>
+
+        <button type="submit">Upload</button>
+      </div>
+    </form>
+
+    <p id="message"></p>
+
+  </div>
+
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+// ================= USER AVATAR =================
+const name = localStorage.getItem("userName") || "User";
+const email = localStorage.getItem("userEmail") || "";
+
+document.getElementById("avatar").innerText = name.charAt(0).toUpperCase();
+document.getElementById("userName").innerText = name;
+document.getElementById("userEmail").innerText = email;
+
+// toggle dropdown
+function toggleMenu(event) {
+  event.stopPropagation();
+  const menu = document.getElementById("dropdown");
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+// close on outside click
+window.addEventListener("click", () => {
+  document.getElementById("dropdown").style.display = "none";
+});
+
+// logout
+function logout() {
+  localStorage.clear();
+  window.location.href = "login.html";
+}
+
+// profile
+function showProfile() {
+  alert("Name: " + name + "\nEmail: " + email);
+}
+
+// ================= FOLDER LOGIC =================
+function showFolder() {
+  document.getElementById("folderBox").style.display = "block";
+  document.getElementById("uploadBox").style.display = "none";
+}
+
+function showUpload() {
+  document.getElementById("uploadBox").style.display = "block";
+  document.getElementById("folderBox").style.display = "none";
+}
+
+async function loadFolders() {
+  const res = await fetch("http://localhost:5000/materials");
+  const data = await res.json();
+
+  const folders = [...new Set(
+    data
+      .filter(item => item.folder && item.fileUrl === "")
+      .map(item => item.folder)
+  )];
+
+  const select = document.getElementById("folderSelect");
+  select.innerHTML = '<option value="">No Folder</option>';
+
+  folders.forEach(folder => {
+    const option = document.createElement("option");
+    option.value = folder;
+    option.textContent = folder;
+    select.appendChild(option);
+  });
+}
+
+loadFolders();
+
+// create folder
+async function createFolder() {
+  const name = document.getElementById("folderName").value;
+
+  if (!name) return alert("Enter folder name");
+
+  const res = await fetch("http://localhost:5000/create-folder", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": token
+    },
+    body: JSON.stringify({ folder: name })
+  });
+
+  const data = await res.json();
+
+  alert(data.message);
+
+  document.getElementById("folderName").value = "";
+
+  loadFolders();
+  showUpload();
+}
+
+// upload
+document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData(e.target);
+  const folder = document.getElementById("folderSelect").value;
+
+  formData.append("folder", folder || "General");
+
+  const res = await fetch("http://localhost:5000/upload", {
+    method: "POST",
+    headers: { Authorization: token },
+    body: formData
+  });
+
+  const data = await res.json();
+  document.getElementById("message").innerText = data.message;
+
+  e.target.reset();
+});
+</script>
+
+</body>
+</html>

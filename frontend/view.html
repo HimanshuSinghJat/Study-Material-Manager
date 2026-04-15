@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>View Materials</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 220px;
+      height: 100vh;
+      background: #1e2a38;
+      color: white;
+      padding: 20px;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 30px;
+    }
+
+    .menu a {
+      display: block;
+      color: #bdc3c7;
+      margin: 15px 0;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* MAIN */
+    .main {
+      flex: 1;
+      background: #f4f6f8;
+      padding: 30px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    /* ROW */
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 12px 15px;
+      margin: 10px auto;
+      border-radius: 8px;
+      width: 80%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .right button, .right a {
+      margin-left: 8px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .open-btn {
+      background: #3498db;
+      color: white;
+    }
+
+    .download-btn {
+      background: #2ecc71;
+      color: white;
+    }
+
+    .delete-btn {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .back {
+      margin: 20px auto;
+      width: 80%;
+      font-weight: bold;
+      color: #3498db;
+      cursor: pointer;
+    }
+
+    .empty {
+      text-align: center;
+      margin-top: 20px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">Study Material Manager 📚</div>
+  <div class="menu">
+    <a href="index.html">Upload</a>
+    <a href="view.html">View</a>
+  </div>
+</div>
+
+<div class="main">
+  <h2 id="title">All Study Materials</h2>
+  <div id="content"></div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+let allData = [];
+
+// LOAD DATA
+async function loadData() {
+  const res = await fetch("http://localhost:5000/materials");
+  allData = await res.json();
+  showFolders();
+}
+
+// SHOW FOLDERS
+function showFolders() {
+  document.getElementById("title").innerText = "All Study Materials";
+
+  const container = document.getElementById("content");
+  container.innerHTML = "";
+
+  // ✅ Only real folders (from dummy entries)
+  const folders = [...new Set(
+    allData
+      .filter(item => item.folder)
+      .map(item => item.folder.trim())
+  )];
+
+  if (folders.length === 0) {
+    container.innerHTML = `<p class="empty">No folders available</p>`;
+    return;
+  }
+
+  folders.forEach(folder => {
+    const div = document.createElement("div");
+    div.classList.add("row");
+
+    div.innerHTML = `
+      <div class="left">
+        📁 <strong>${folder}</strong>
+      </div>
+
+      <div class="right">
+        <button class="open-btn" onclick="openFolder('${folder}')">Open</button>
+        <button class="delete-btn" onclick="deleteFolder('${folder}')">Delete</button>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+// OPEN FOLDER
+function openFolder(folder) {
+  document.getElementById("title").innerText = "📁 " + folder;
+
+  const container = document.getElementById("content");
+  container.innerHTML = `<div class="back" onclick="showFolders()">⬅ Back</div>`;
+
+  const files = allData.filter(item =>
+    item.folder &&
+    item.folder.trim().toLowerCase() === folder.trim().toLowerCase() &&
+    item.fileUrl &&
+    item.fileUrl !== ""
+  );
+
+  if (files.length === 0) {
+    container.innerHTML += `<p class="empty">No files in this folder</p>`;
+    return;
+  }
+
+  files.forEach(file => {
+    const div = document.createElement("div");
+    div.classList.add("row");
+
+    div.innerHTML = `
+      <div class="left">
+        📄 ${file.title}
+      </div>
+
+      <div class="right">
+        <a class="open-btn" href="http://localhost:5000${file.fileUrl}" target="_blank">Open</a>
+        <a class="download-btn" href="http://localhost:5000${file.fileUrl}" download>Download</a>
+        <button class="delete-btn" onclick="deleteMaterial('${file._id}')">Delete</button>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+// DELETE FILE
+async function deleteMaterial(id) {
+  await fetch(`http://localhost:5000/materials/${id}`, {
+    method: "DELETE"
+  });
+
+  loadData();
+}
+
+// DELETE FOLDER
+async function deleteFolder(folder) {
+  const items = allData.filter(item =>
+    item.folder &&
+    item.folder.trim().toLowerCase() === folder.trim().toLowerCase()
+  );
+
+  for (let item of items) {
+    await fetch(`http://localhost:5000/materials/${item._id}`, {
+      method: "DELETE"
+    });
+  }
+
+  loadData();
+}
+
+loadData();
+</script>
+
+</body>
+</html>
