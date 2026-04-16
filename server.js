@@ -13,7 +13,10 @@ const User     = require("./models/User");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "https://study-material-manager.vercel.app",
+  credentials: true
+}));
 app.use(express.json());
 
 // ================= FILE UPLOAD =================
