@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Signup</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up – Study Material Manager</title>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
       font-family: 'Segoe UI', sans-serif;
       height: 100vh;
       display: flex;
@@ -15,84 +18,114 @@
       position: relative;
     }
 
-    /* BLOBS */
     .blob {
       position: absolute;
-      width: 300px;
-      height: 300px;
+      width: 320px;
+      height: 320px;
       border-radius: 50%;
-      filter: blur(120px);
-      opacity: 0.4;
+      filter: blur(130px);
+      opacity: 0.35;
+      pointer-events: none;
     }
+    .blob1 { background: #3498db; top: -80px; left: -80px; }
+    .blob2 { background: #1abc9c; bottom: -80px; right: -80px; }
 
-    .blob1 {
-      background: #3498db;
-      top: -50px;
-      left: -50px;
-    }
-
-    .blob2 {
-      background: #1abc9c;
-      bottom: -50px;
-      right: -50px;
-    }
-
-    /* CARD */
     .card {
-      background: rgba(255,255,255,0.95);
-      padding: 35px;
-      border-radius: 12px;
-      width: 350px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      background: rgba(255,255,255,0.97);
+      padding: 40px 35px;
+      border-radius: 16px;
+      width: 360px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.25);
       text-align: center;
       z-index: 1;
     }
 
-    h2 {
-      margin-bottom: 20px;
+    .card h2 {
+      margin-bottom: 8px;
       color: #2c3e50;
+      font-size: 24px;
     }
 
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 12px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+    .card p.sub {
+      color: #777;
+      font-size: 14px;
+      margin-bottom: 24px;
     }
 
-    button {
+    .field {
+      text-align: left;
+      margin-top: 14px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .field input {
       width: 100%;
-      padding: 10px;
-      margin-top: 15px;
-      border-radius: 6px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1.5px solid #ddd;
+      font-size: 14px;
+      transition: border 0.2s;
+      outline: none;
+    }
+
+    .field input:focus {
+      border-color: #3498db;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 11px;
+      margin-top: 22px;
+      border-radius: 8px;
       border: none;
-      background: #3498db;
+      background: linear-gradient(135deg, #3498db, #2980b9);
       color: white;
       font-weight: bold;
+      font-size: 15px;
       cursor: pointer;
-      transition: 0.3s;
+      transition: opacity 0.2s;
     }
 
-    button:hover {
-      background: #2980b9;
-    }
+    button[type="submit"]:hover  { opacity: 0.88; }
+    button[type="submit"]:disabled { opacity: 0.55; cursor: not-allowed; }
 
     #message {
-      margin-top: 10px;
-      color: green;
+      margin-top: 14px;
+      font-size: 13px;
+      min-height: 18px;
     }
+    .error   { color: #e74c3c; }
+    .success { color: #27ae60; }
+
+    .go-login {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 9px 22px;
+      background: #1abc9c;
+      color: white;
+      border-radius: 7px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+      transition: opacity 0.2s;
+    }
+    .go-login:hover { opacity: 0.85; }
 
     .link {
-      margin-top: 15px;
+      margin-top: 18px;
       display: block;
       color: #3498db;
       text-decoration: none;
+      font-size: 13px;
     }
-
-    .link:hover {
-      text-decoration: underline;
-    }
+    .link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -102,45 +135,84 @@
 
 <div class="card">
   <h2>Create Account ✨</h2>
+  <p class="sub">Join Study Material Manager</p>
 
   <form id="signupForm">
-    <input type="text" name="name" placeholder="Full Name" required>
-    <input type="email" name="email" placeholder="Email" required>
-    <input type="password" name="password" placeholder="Password" required>
+    <div class="field">
+      <label for="name">Full Name</label>
+      <input type="text" id="name" placeholder="Your full name" required>
+    </div>
 
-    <button type="submit">Sign Up</button>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com" required>
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Min 6 characters" required minlength="6">
+    </div>
+
+    <button type="submit" id="signupBtn">Sign Up</button>
   </form>
 
-  <p id="message"></p>
+  <div id="message"></div>
 
   <a class="link" href="login.html">Already have an account? Login</a>
 </div>
 
 <script>
-  const form = document.getElementById("signupForm");
+  // ── Redirect if already logged in ──────────────────────────────────────────
+  if (localStorage.getItem("token")) {
+    window.location.href = "index.html";
+  }
+
+  const form      = document.getElementById("signupForm");
+  const msgEl     = document.getElementById("message");
+  const signupBtn = document.getElementById("signupBtn");
+
+  function showMsg(html, type) {
+    msgEl.innerHTML   = html;
+    msgEl.className   = type;
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    signupBtn.disabled    = true;
+    signupBtn.textContent = "Creating account…";
+    showMsg("", "");
 
-    const formData = new FormData(form);
+    const name     = document.getElementById("name").value.trim();
+    const email    = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
 
-    const dataObj = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      password: formData.get("password")
-    };
+    try {
+      const res  = await fetch("http://localhost:5000/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ name, email, password })
+      });
 
-    const res = await fetch("http://localhost:5000/signup", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(dataObj)
-    });
+      const data = await res.json();
 
-    const data = await res.json();
+      if (res.ok) {
+        showMsg(
+          `${data.message}<br><br><a class="go-login" href="login.html">Go to Login →</a>`,
+          "success"
+        );
+        form.reset();
+        // Don't re-enable button after success – they should use the link
+      } else {
+        showMsg(data.message || "Signup failed ❌", "error");
+        signupBtn.disabled    = false;
+        signupBtn.textContent = "Sign Up";
+      }
 
-    document.getElementById("message").innerText = data.message;
+    } catch (err) {
+      showMsg("Cannot reach server. Is it running? ❌", "error");
+      signupBtn.disabled    = false;
+      signupBtn.textContent = "Sign Up";
+    }
   });
 </script>
 
