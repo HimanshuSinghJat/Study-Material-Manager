@@ -290,248 +290,98 @@
 </div>
 
 <script>
-  // ── Auth guard ──────────────────────────────────────────────────────────────
+  const BASE_URL = "https://study-material-manager.onrender.com";
+
   const token = localStorage.getItem("token");
-  if (!token) { window.location.href = "login.html"; }
+  if (!token) window.location.href = "login.html";
 
-  // ── User info ───────────────────────────────────────────────────────────────
-  const userName  = localStorage.getItem("userName")  || "User";
-  const userEmail = localStorage.getItem("userEmail") || "";
-
-  document.getElementById("avatar").textContent    = userName.charAt(0).toUpperCase();
-  document.getElementById("userName").textContent  = userName;
-  document.getElementById("userEmail").textContent = userEmail;
-
-  // ── Dropdown toggle ─────────────────────────────────────────────────────────
-  function toggleMenu(e) {
-    e.stopPropagation();
-    document.getElementById("dropdown").classList.toggle("open");
-  }
-
-  document.addEventListener("click", () => {
-    document.getElementById("dropdown").classList.remove("open");
-  });
-
-  function logout() {
-    localStorage.clear();
-    window.location.href = "login.html";
-  }
-
-  function showProfile() {
-    alert(`Name: ${userName}\nEmail: ${userEmail}`);
-  }
-
-  // ── Data store ──────────────────────────────────────────────────────────────
-  let allData = [];   // all materials returned by API
-
-  // ── Handle 401 ─────────────────────────────────────────────────────────────
   function handleUnauthorized() {
     alert("Session expired. Please login again.");
     localStorage.clear();
     window.location.href = "login.html";
   }
 
-  // ── Fetch all materials from server ─────────────────────────────────────────
+  // ── LOAD DATA ───────────────────────────────────────
   async function loadData() {
-    document.getElementById("content").innerHTML = '<div class="loading">Loading…</div>';
-
     try {
-      const res = await fetch("http://localhost:5000/materials", {
-        headers: { "Authorization": token }
+      const res = await fetch(`${BASE_URL}/materials`, {
+        headers: { Authorization: token }
       });
 
-      if (res.status === 401) { handleUnauthorized(); return; }
-
-      if (!res.ok) {
-        document.getElementById("content").innerHTML =
-          '<div class="empty"><div class="icon">⚠️</div><p>Failed to load materials</p></div>';
-        return;
-      }
-
-      allData = await res.json();
-      showFolders();
-
-    } catch (err) {
-      console.error("loadData error:", err);
-      document.getElementById("content").innerHTML =
-        '<div class="empty"><div class="icon">🔌</div><p>Cannot reach server</p></div>';
-    }
-  }
-
-  // ── Show folder list ────────────────────────────────────────────────────────
-  function showFolders() {
-    document.getElementById("pageTitle").textContent = "All Study Materials";
-    document.getElementById("backBtn").style.display = "none";
-
-    const container = document.getElementById("content");
-    container.innerHTML = "";
-
-    /*
-     * A "folder entry" is a doc where fileUrl is "" (empty string).
-     * Files always have a non-empty fileUrl ("/uploads/...").
-     * We gather unique folder names from folder-placeholder docs only.
-     */
-    const folderNames = [
-      ...new Set(
-        allData
-          .filter(item => item.fileUrl === "" || item.fileUrl === null || item.fileUrl === undefined)
-          .map(item => item.folder)
-          .filter(Boolean)
-      )
-    ];
-
-    if (folderNames.length === 0) {
-      container.innerHTML = `
-        <div class="empty">
-          <div class="icon">📭</div>
-          <p>No folders yet. Go to Upload to create one.</p>
-        </div>`;
-      return;
-    }
-
-    folderNames.forEach(folder => {
-      // Count files inside this folder
-      const fileCount = allData.filter(
-        item => item.folder === folder && item.fileUrl && item.fileUrl !== ""
-      ).length;
-
-      const row = document.createElement("div");
-      row.className = "row";
-      row.innerHTML = `
-        <div class="row-left">
-          <span class="icon">📁</span>
-          <div class="meta">
-            <strong>${escapeHtml(folder)}</strong>
-            <span class="subject">${fileCount} file${fileCount !== 1 ? "s" : ""}</span>
-          </div>
-        </div>
-        <div class="row-right">
-          <button class="open-btn"   onclick="openFolder('${escapeAttr(folder)}')">Open</button>
-          <button class="delete-btn" onclick="deleteFolder('${escapeAttr(folder)}')">Delete</button>
-        </div>`;
-      container.appendChild(row);
-    });
-  }
-
-  // ── Open a folder (show its files) ──────────────────────────────────────────
-  function openFolder(folder) {
-    document.getElementById("pageTitle").textContent = "📁 " + folder;
-    document.getElementById("backBtn").style.display  = "flex";
-
-    const container = document.getElementById("content");
-    container.innerHTML = "";
-
-    // Files: non-empty fileUrl AND matching folder name
-    const files = allData.filter(
-      item => item.folder === folder && item.fileUrl && item.fileUrl !== ""
-    );
-
-    if (files.length === 0) {
-      container.innerHTML = `
-        <div class="empty">
-          <div class="icon">📄</div>
-          <p>No files in this folder yet.</p>
-        </div>`;
-      return;
-    }
-
-    files.forEach(file => {
-      const row = document.createElement("div");
-      row.className = "row";
-      row.innerHTML = `
-        <div class="row-left">
-          <span class="icon">📄</span>
-          <div class="meta">
-            <strong>${escapeHtml(file.title)}</strong>
-            <span class="subject">${escapeHtml(file.subject)}</span>
-          </div>
-        </div>
-        <div class="row-right">
-          <a class="open-btn"
-             href="http://localhost:5000${file.fileUrl}"
-             target="_blank">Open</a>
-          <a class="download-btn"
-             href="http://localhost:5000${file.fileUrl}"
-             download>Download</a>
-          <button class="delete-btn"
-                  onclick="deleteMaterial('${file._id}', '${escapeAttr(folder)}')">Delete</button>
-        </div>`;
-      container.appendChild(row);
-    });
-  }
-
-  // ── Delete a single file ─────────────────────────────────────────────────────
-  async function deleteMaterial(id, currentFolder) {
-    if (!confirm("Delete this file?")) return;
-
-    try {
-      const res = await fetch(`http://localhost:5000/materials/${id}`, {
-        method:  "DELETE",
-        headers: { "Authorization": token }
-      });
-
-      if (res.status === 401) { handleUnauthorized(); return; }
+      if (res.status === 401) return handleUnauthorized();
 
       const data = await res.json();
 
-      if (res.ok) {
-        // Remove from local data and re-render without a full API call
-        allData = allData.filter(item => item._id !== id);
-        openFolder(currentFolder);
-      } else {
-        alert(data.message || "Delete failed ❌");
+      const container = document.getElementById("materials");
+      container.innerHTML = "";
+
+      if (data.length === 0) {
+        container.innerHTML = "<p>No materials found</p>";
+        return;
       }
 
+      // Group by folder
+      const folders = {};
+
+      data.forEach(item => {
+        if (!folders[item.folder]) {
+          folders[item.folder] = [];
+        }
+        folders[item.folder].push(item);
+      });
+
+      // Render folders
+      Object.keys(folders).forEach(folder => {
+        const folderDiv = document.createElement("div");
+        folderDiv.innerHTML = `<h3>${folder}</h3>`;
+
+        folders[folder].forEach(item => {
+          if (!item.fileUrl) return; // skip folder placeholder
+
+          const file = document.createElement("div");
+
+          file.innerHTML = `
+            <p>${item.title}</p>
+            <a href="${BASE_URL}${item.fileUrl}" target="_blank">View</a>
+            <button onclick="deleteMaterial('${item._id}')">Delete</button>
+          `;
+
+          folderDiv.appendChild(file);
+        });
+
+        container.appendChild(folderDiv);
+      });
+
     } catch (err) {
-      alert("Error deleting file ❌");
       console.error(err);
     }
   }
 
-  // ── Delete entire folder (placeholder + all its files) ──────────────────────
-  async function deleteFolder(folder) {
-    const items = allData.filter(item => item.folder === folder);
-
-    if (items.length === 0) return;
-
-    if (!confirm(`Delete folder "${folder}" and all its files?`)) return;
-
-    // Delete each item sequentially
-    for (const item of items) {
-      try {
-        const res = await fetch(`http://localhost:5000/materials/${item._id}`, {
-          method:  "DELETE",
-          headers: { "Authorization": token }
-        });
-
-        if (res.status === 401) { handleUnauthorized(); return; }
-
-      } catch (err) {
-        console.error("Error deleting item:", item._id, err);
-      }
-    }
-
-    // Refresh data from server after all deletes
-    await loadData();
-  }
-
-  // ── HTML injection helpers ───────────────────────────────────────────────────
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  function escapeAttr(str) {
-    // Safe for single-quoted HTML attribute values
-    return String(str).replace(/'/g, "\\'");
-  }
-
-  // ── Bootstrap ───────────────────────────────────────────────────────────────
   loadData();
+
+  // ── DELETE FILE ─────────────────────────────────────
+  async function deleteMaterial(id) {
+    if (!confirm("Delete this file?")) return;
+
+    try {
+      const res = await fetch(`${BASE_URL}/materials/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: token }
+      });
+
+      if (res.status === 401) return handleUnauthorized();
+
+      const data = await res.json();
+      alert(data.message);
+
+      loadData();
+
+    } catch (err) {
+      console.error(err);
+    }
+  }
 </script>
+
 
 </body>
 </html>

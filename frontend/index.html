@@ -299,7 +299,7 @@
     <div id="folderBox">
       <div class="field">
         <label>Folder Name</label>
-        <input type="text" id="folderName" placeholder="e.g. Physics Notes">
+        <input type="text" id="folderName" placeholder="e.g. Notes">
       </div>
       <button class="submit-btn" id="createFolderBtn" onclick="createFolder()">✅ Create Folder</button>
       <p id="folderMsg"></p>
@@ -322,7 +322,7 @@
 
         <div class="field">
           <label>Subject</label>
-          <input type="text" name="subject" placeholder="e.g. Physics" required>
+          <input type="text" name="subject" placeholder="e.g. Notes" required>
         </div>
 
         <div class="field">
@@ -340,11 +340,13 @@
 </div>
 
 <script>
-  // ── Auth guard ──────────────────────────────────────────────────────────────
-  const token = localStorage.getItem("token");
-  if (!token) { window.location.href = "login.html"; }
+  const BASE_URL = "https://study-material-manager.onrender.com";
 
-  // ── User info ───────────────────────────────────────────────────────────────
+  // ── Auth guard ─────────────────────────────────────────
+  const token = localStorage.getItem("token");
+  if (!token) window.location.href = "login.html";
+
+  // ── User info ──────────────────────────────────────────
   const userName  = localStorage.getItem("userName")  || "User";
   const userEmail = localStorage.getItem("userEmail") || "";
 
@@ -352,7 +354,6 @@
   document.getElementById("userName").textContent  = userName;
   document.getElementById("userEmail").textContent = userEmail;
 
-  // ── Dropdown toggle ─────────────────────────────────────────────────────────
   function toggleMenu(e) {
     e.stopPropagation();
     document.getElementById("dropdown").classList.toggle("open");
@@ -362,65 +363,51 @@
     document.getElementById("dropdown").classList.remove("open");
   });
 
-  // ── Logout ──────────────────────────────────────────────────────────────────
   function logout() {
     localStorage.clear();
     window.location.href = "login.html";
   }
 
-  // ── Profile ─────────────────────────────────────────────────────────────────
   function showProfile() {
     alert(`Name: ${userName}\nEmail: ${userEmail}`);
   }
 
-  // ── Panel toggles ───────────────────────────────────────────────────────────
   function showFolder() {
-    document.getElementById("folderBox").style.display  = "block";
-    document.getElementById("uploadBox").style.display  = "none";
-    document.getElementById("message").textContent      = "";
+    document.getElementById("folderBox").style.display = "block";
+    document.getElementById("uploadBox").style.display = "none";
   }
 
   function showUpload() {
-    document.getElementById("uploadBox").style.display  = "block";
-    document.getElementById("folderBox").style.display  = "none";
-    document.getElementById("message").textContent      = "";
-    loadFolders(); // refresh dropdown when opening upload panel
+    document.getElementById("uploadBox").style.display = "block";
+    document.getElementById("folderBox").style.display = "none";
+    loadFolders();
   }
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
   function showMsg(el, text, isError) {
     el.textContent = text;
     el.className   = isError ? "msg-err" : "msg-ok";
   }
 
-  // ── Handle expired token ────────────────────────────────────────────────────
   function handleUnauthorized() {
     alert("Session expired. Please login again.");
     localStorage.clear();
     window.location.href = "login.html";
   }
 
-  // ── Load folders into dropdown ──────────────────────────────────────────────
+  // ── LOAD FOLDERS ───────────────────────────────────────
   async function loadFolders() {
     try {
-      const res = await fetch("http://localhost:5000/materials", {
-        headers: { "Authorization": token }
+      const res = await fetch(`${BASE_URL}/materials`, {
+        headers: { Authorization: token }
       });
 
-      if (res.status === 401) { handleUnauthorized(); return; }
+      if (res.status === 401) return handleUnauthorized();
 
       const data = await res.json();
 
-      /*
-       * Folder entries are stored with fileUrl === "" (empty string).
-       * Files always have a non-empty fileUrl like "/uploads/xxx.pdf".
-       * We collect unique folder names from folder-placeholder docs only.
-       */
       const folderSet = new Set();
       data.forEach(item => {
-        if (item.fileUrl === "" || item.fileUrl === null || item.fileUrl === undefined) {
-          if (item.folder) folderSet.add(item.folder);
-        }
+        if (!item.fileUrl) folderSet.add(item.folder);
       });
 
       const select = document.getElementById("folderSelect");
@@ -428,102 +415,82 @@
 
       folderSet.forEach(folder => {
         const opt = document.createElement("option");
-        opt.value       = folder;
+        opt.value = folder;
         opt.textContent = folder;
         select.appendChild(opt);
       });
 
     } catch (err) {
-      console.error("loadFolders error:", err);
+      console.error(err);
     }
   }
 
-  // Load folders on page init (so dropdown is pre-populated)
   loadFolders();
 
-  // ── Create folder ───────────────────────────────────────────────────────────
+  // ── CREATE FOLDER ──────────────────────────────────────
   async function createFolder() {
     const folderName = document.getElementById("folderName").value.trim();
-    const msgEl      = document.getElementById("folderMsg");
-    const btn        = document.getElementById("createFolderBtn");
+    const msgEl = document.getElementById("folderMsg");
 
     if (!folderName) {
-      showMsg(msgEl, "Please enter a folder name ❌", true);
+      showMsg(msgEl, "Enter folder name ❌", true);
       return;
     }
 
-    btn.disabled    = true;
-    btn.textContent = "Creating…";
-
     try {
-      const res = await fetch("http://localhost:5000/create-folder", {
-        method:  "POST",
+      const res = await fetch(`${BASE_URL}/create-folder`, {
+        method: "POST",
         headers: {
-          "Content-Type":  "application/json",
-          "Authorization": token
+          "Content-Type": "application/json",
+          Authorization: token
         },
         body: JSON.stringify({ folder: folderName })
       });
 
-      if (res.status === 401) { handleUnauthorized(); return; }
+      if (res.status === 401) return handleUnauthorized();
 
       const data = await res.json();
-
       showMsg(msgEl, data.message, !res.ok);
 
       if (res.ok) {
         document.getElementById("folderName").value = "";
-        loadFolders();   // refresh dropdown
-        setTimeout(showUpload, 800); // switch to upload panel
+        loadFolders();
+        setTimeout(showUpload, 800);
       }
 
-    } catch (err) {
-      showMsg(msgEl, "Error creating folder ❌", true);
-    } finally {
-      btn.disabled    = false;
-      btn.textContent = "✅ Create Folder";
+    } catch {
+      showMsg(msgEl, "Error ❌", true);
     }
   }
 
-  // ── Upload file ─────────────────────────────────────────────────────────────
+  // ── UPLOAD FILE ────────────────────────────────────────
   document.getElementById("uploadForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const msgEl = document.getElementById("message");
-    const btn   = document.getElementById("uploadBtn");
-    btn.disabled    = true;
-    btn.textContent = "Uploading…";
-    showMsg(msgEl, "", false);
 
     const formData = new FormData(e.target);
-
-    // Append selected folder from dropdown
-    const folder = document.getElementById("folderSelect").value || "General";
-    formData.set("folder", folder);   // use set() to avoid duplicates if already added
+    formData.set("folder", document.getElementById("folderSelect").value);
 
     try {
-      const res = await fetch("http://localhost:5000/upload", {
-        method:  "POST",
-        headers: { "Authorization": token },
-        // ⚠️ Do NOT set Content-Type here; browser sets it with boundary for multipart
-        body:    formData
+      const res = await fetch(`${BASE_URL}/upload`, {
+        method: "POST",
+        headers: { Authorization: token },
+        body: formData
       });
 
-      if (res.status === 401) { handleUnauthorized(); return; }
+      if (res.status === 401) return handleUnauthorized();
 
       const data = await res.json();
       showMsg(msgEl, data.message, !res.ok);
 
       if (res.ok) {
         e.target.reset();
-        loadFolders();  // in case a new folder was typed
+        loadFolders();
       }
 
-    } catch (err) {
-      showMsg(msgEl, "Upload failed. Check server connection ❌", true);
-    } finally {
-      btn.disabled    = false;
-      btn.textContent = "⬆ Upload";
+    } catch {
+      showMsg(msgEl, "Upload failed ❌", true);
     }
   });
 </script>
