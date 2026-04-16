@@ -1,327 +1,531 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Study Manager</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Material Manager – Upload</title>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
       font-family: 'Segoe UI', sans-serif;
       display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background: #f0f2f5;
     }
 
-    /* SIDEBAR */
+    /* ── SIDEBAR ─────────────────────────────────────────────────────────── */
     .sidebar {
-      width: 220px;
-      height: 100vh;
+      width: 230px;
+      min-height: 100vh;
       background: #1e2a38;
       color: white;
-      padding: 20px;
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
     }
 
     .logo {
-      font-size: 22px;
-      font-weight: bold;
-      margin-bottom: 30px;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 36px;
+      line-height: 1.4;
     }
 
     .menu a {
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       color: #bdc3c7;
-      margin: 15px 0;
+      margin: 10px 0;
       text-decoration: none;
-      cursor: pointer;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: background 0.2s, color 0.2s;
     }
 
-    /* MAIN */
+    .menu a:hover,
+    .menu a.active {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    /* ── MAIN ────────────────────────────────────────────────────────────── */
     .main {
       flex: 1;
-      background: #f4f6f8;
+      overflow-y: auto;
       padding: 30px;
       position: relative;
     }
 
-    /* USER AVATAR */
-    .user-box {
-      position: absolute;
-      top: 20px;
-      right: 30px;
-      cursor: pointer;
-      z-index: 1000;
+    /* ── TOPBAR ──────────────────────────────────────────────────────────── */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
     }
 
+    .topbar h1 {
+      font-size: 22px;
+      color: #2c3e50;
+    }
+
+    /* ── AVATAR / DROPDOWN ───────────────────────────────────────────────── */
+    .user-box { position: relative; }
+
     #avatar {
-      width: 40px;
-      height: 40px;
-      background: #3498db;
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #3498db, #2980b9);
       color: white;
-      font-weight: bold;
+      font-weight: 700;
+      font-size: 18px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s;
     }
 
-    #avatar:hover {
-      background: #2980b9;
-    }
+    #avatar:hover { transform: scale(1.08); }
 
     .dropdown {
       display: none;
       position: absolute;
       right: 0;
-      top: 50px;
+      top: 52px;
       background: white;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      width: 200px;
+      padding: 14px;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      width: 210px;
+      z-index: 999;
     }
 
+    .dropdown.open { display: block; }
+
     .dropdown p {
-      margin: 5px 0;
-      font-size: 14px;
+      font-size: 13px;
+      color: #555;
+      margin: 4px 0;
+      word-break: break-all;
     }
+
+    .dropdown p strong { color: #2c3e50; }
+
+    .dropdown hr { margin: 10px 0; border: none; border-top: 1px solid #eee; }
 
     .dropdown button {
       width: 100%;
-      margin-top: 5px;
+      margin-top: 6px;
       padding: 8px;
       border: none;
-      background: #eee;
+      background: #f5f5f5;
       cursor: pointer;
-      border-radius: 5px;
+      border-radius: 6px;
+      font-size: 13px;
+      transition: background 0.2s;
     }
 
-    .dropdown button:hover {
-      background: #ddd;
+    .dropdown button:hover { background: #e8e8e8; }
+
+    .dropdown .logout-btn {
+      background: #fdecea;
+      color: #e74c3c;
+      font-weight: 600;
     }
 
-    /* CARD */
+    .dropdown .logout-btn:hover { background: #fbd7d4; }
+
+    /* ── CARD ────────────────────────────────────────────────────────────── */
     .card {
       background: white;
       padding: 30px;
-      border-radius: 12px;
-      width: 420px;
-      margin: 40px auto;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      text-align: center;
+      border-radius: 14px;
+      max-width: 480px;
+      margin: 0 auto;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
     }
 
+    .card h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 22px;
+      font-size: 20px;
+    }
+
+    /* ── ACTION BUTTONS ──────────────────────────────────────────────────── */
     .actions {
       display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
+      gap: 12px;
+      margin-bottom: 18px;
     }
 
     .btn {
-      padding: 10px;
+      flex: 1;
+      padding: 11px;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
-      width: 48%;
+      font-weight: 600;
+      font-size: 14px;
+      transition: opacity 0.2s;
     }
 
-    .create-btn {
-      background: #3498db;
-      color: white;
-    }
+    .btn:hover { opacity: 0.85; }
 
-    .upload-btn {
-      background: #1abc9c;
-      color: white;
-    }
+    .create-btn { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
+    .upload-btn { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
 
-    input, select {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-
-    #folderBox, #uploadBox {
+    /* ── FOLDER BOX ──────────────────────────────────────────────────────── */
+    #folderBox {
       display: none;
-      margin-top: 15px;
+      margin-top: 6px;
+      animation: fadeIn 0.2s ease;
     }
+
+    /* ── UPLOAD BOX ──────────────────────────────────────────────────────── */
+    #uploadBox {
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── FORM INPUTS ─────────────────────────────────────────────────────── */
+    .field {
+      margin-top: 12px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: #666;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1.5px solid #ddd;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .field input:focus,
+    .field select:focus { border-color: #1abc9c; }
+
+    .submit-btn {
+      width: 100%;
+      padding: 11px;
+      margin-top: 18px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #1abc9c, #16a085);
+      color: white;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .submit-btn:hover    { opacity: 0.88; }
+    .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    #message {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 14px;
+      min-height: 18px;
+    }
+    .msg-ok  { color: #27ae60; }
+    .msg-err { color: #e74c3c; }
   </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
+<!-- ── SIDEBAR ───────────────────────────────────────────────────────────── -->
 <div class="sidebar">
-  <div class="logo">Study Material Manager 📚</div>
+  <div class="logo">📚 Study Material<br>Manager</div>
   <div class="menu">
-    <a href="index.html">Upload</a>
-    <a href="view.html">View</a>
+    <a href="index.html" class="active">📤 Upload</a>
+    <a href="view.html">📂 View Materials</a>
   </div>
 </div>
 
-<!-- MAIN -->
+<!-- ── MAIN ──────────────────────────────────────────────────────────────── -->
 <div class="main">
 
-  <!-- USER AVATAR -->
-  <div class="user-box" onclick="toggleMenu(event)">
-    <div id="avatar"></div>
+  <!-- Topbar -->
+  <div class="topbar">
+    <h1>Upload Study Material</h1>
 
-    <div id="dropdown" class="dropdown">
-      <p id="userName"></p>
-      <p id="userEmail"></p>
-      <hr>
-      <button onclick="showProfile()">Profile</button>
-      <button onclick="logout()">Logout</button>
+    <div class="user-box">
+      <div id="avatar" onclick="toggleMenu(event)"></div>
+
+      <div id="dropdown" class="dropdown">
+        <p><strong id="userName"></strong></p>
+        <p id="userEmail"></p>
+        <hr>
+        <button onclick="showProfile()">👤 Profile</button>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+      </div>
     </div>
   </div>
 
-  <!-- CARD -->
+  <!-- Card -->
   <div class="card">
-
-    <h2>Upload Study Material</h2>
+    <h2>📤 Upload Material</h2>
 
     <div class="actions">
-      <button class="btn create-btn" onclick="showFolder()">+ Create Folder</button>
-      <button class="btn upload-btn" onclick="showUpload()">Upload File</button>
+      <button class="btn create-btn" onclick="showFolder()">📁 Create Folder</button>
+      <button class="btn upload-btn" onclick="showUpload()">⬆ Upload File</button>
     </div>
 
+    <!-- FOLDER CREATION BOX -->
     <div id="folderBox">
-      <input type="text" id="folderName" placeholder="Enter folder name">
-      <button onclick="createFolder()">Create</button>
+      <div class="field">
+        <label>Folder Name</label>
+        <input type="text" id="folderName" placeholder="e.g. Physics Notes">
+      </div>
+      <button class="submit-btn" id="createFolderBtn" onclick="createFolder()">✅ Create Folder</button>
+      <p id="folderMsg"></p>
     </div>
 
+    <!-- UPLOAD FORM -->
     <form id="uploadForm">
       <div id="uploadBox">
+        <div class="field">
+          <label>Select Folder</label>
+          <select id="folderSelect">
+            <option value="General">General</option>
+          </select>
+        </div>
 
-        <select id="folderSelect">
-          <option value="">No Folder</option>
-        </select>
+        <div class="field">
+          <label>Title</label>
+          <input type="text" name="title" placeholder="e.g. Chapter 1 Notes" required>
+        </div>
 
-        <input type="text" name="title" placeholder="Title" required>
-        <input type="text" name="subject" placeholder="Subject" required>
-        <input type="file" name="file" required>
+        <div class="field">
+          <label>Subject</label>
+          <input type="text" name="subject" placeholder="e.g. Physics" required>
+        </div>
 
-        <button type="submit">Upload</button>
+        <div class="field">
+          <label>Choose File</label>
+          <input type="file" name="file" required>
+        </div>
+
+        <button type="submit" class="submit-btn" id="uploadBtn">⬆ Upload</button>
       </div>
     </form>
 
     <p id="message"></p>
-
   </div>
 
 </div>
 
 <script>
-const token = localStorage.getItem("token");
-if (!token) window.location.href = "login.html";
+  // ── Auth guard ──────────────────────────────────────────────────────────────
+  const token = localStorage.getItem("token");
+  if (!token) { window.location.href = "login.html"; }
 
-// ================= USER AVATAR =================
-const name = localStorage.getItem("userName") || "User";
-const email = localStorage.getItem("userEmail") || "";
+  // ── User info ───────────────────────────────────────────────────────────────
+  const userName  = localStorage.getItem("userName")  || "User";
+  const userEmail = localStorage.getItem("userEmail") || "";
 
-document.getElementById("avatar").innerText = name.charAt(0).toUpperCase();
-document.getElementById("userName").innerText = name;
-document.getElementById("userEmail").innerText = email;
+  document.getElementById("avatar").textContent    = userName.charAt(0).toUpperCase();
+  document.getElementById("userName").textContent  = userName;
+  document.getElementById("userEmail").textContent = userEmail;
 
-// toggle dropdown
-function toggleMenu(event) {
-  event.stopPropagation();
-  const menu = document.getElementById("dropdown");
-  menu.style.display = menu.style.display === "block" ? "none" : "block";
-}
+  // ── Dropdown toggle ─────────────────────────────────────────────────────────
+  function toggleMenu(e) {
+    e.stopPropagation();
+    document.getElementById("dropdown").classList.toggle("open");
+  }
 
-// close on outside click
-window.addEventListener("click", () => {
-  document.getElementById("dropdown").style.display = "none";
-});
-
-// logout
-function logout() {
-  localStorage.clear();
-  window.location.href = "login.html";
-}
-
-// profile
-function showProfile() {
-  alert("Name: " + name + "\nEmail: " + email);
-}
-
-// ================= FOLDER LOGIC =================
-function showFolder() {
-  document.getElementById("folderBox").style.display = "block";
-  document.getElementById("uploadBox").style.display = "none";
-}
-
-function showUpload() {
-  document.getElementById("uploadBox").style.display = "block";
-  document.getElementById("folderBox").style.display = "none";
-}
-
-async function loadFolders() {
-  const res = await fetch("http://localhost:5000/materials");
-  const data = await res.json();
-
-  const folders = [...new Set(
-    data
-      .filter(item => item.folder && item.fileUrl === "")
-      .map(item => item.folder)
-  )];
-
-  const select = document.getElementById("folderSelect");
-  select.innerHTML = '<option value="">No Folder</option>';
-
-  folders.forEach(folder => {
-    const option = document.createElement("option");
-    option.value = folder;
-    option.textContent = folder;
-    select.appendChild(option);
-  });
-}
-
-loadFolders();
-
-// create folder
-async function createFolder() {
-  const name = document.getElementById("folderName").value;
-
-  if (!name) return alert("Enter folder name");
-
-  const res = await fetch("http://localhost:5000/create-folder", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": token
-    },
-    body: JSON.stringify({ folder: name })
+  document.addEventListener("click", () => {
+    document.getElementById("dropdown").classList.remove("open");
   });
 
-  const data = await res.json();
+  // ── Logout ──────────────────────────────────────────────────────────────────
+  function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
+  }
 
-  alert(data.message);
+  // ── Profile ─────────────────────────────────────────────────────────────────
+  function showProfile() {
+    alert(`Name: ${userName}\nEmail: ${userEmail}`);
+  }
 
-  document.getElementById("folderName").value = "";
+  // ── Panel toggles ───────────────────────────────────────────────────────────
+  function showFolder() {
+    document.getElementById("folderBox").style.display  = "block";
+    document.getElementById("uploadBox").style.display  = "none";
+    document.getElementById("message").textContent      = "";
+  }
 
+  function showUpload() {
+    document.getElementById("uploadBox").style.display  = "block";
+    document.getElementById("folderBox").style.display  = "none";
+    document.getElementById("message").textContent      = "";
+    loadFolders(); // refresh dropdown when opening upload panel
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  function showMsg(el, text, isError) {
+    el.textContent = text;
+    el.className   = isError ? "msg-err" : "msg-ok";
+  }
+
+  // ── Handle expired token ────────────────────────────────────────────────────
+  function handleUnauthorized() {
+    alert("Session expired. Please login again.");
+    localStorage.clear();
+    window.location.href = "login.html";
+  }
+
+  // ── Load folders into dropdown ──────────────────────────────────────────────
+  async function loadFolders() {
+    try {
+      const res = await fetch("http://localhost:5000/materials", {
+        headers: { "Authorization": token }
+      });
+
+      if (res.status === 401) { handleUnauthorized(); return; }
+
+      const data = await res.json();
+
+      /*
+       * Folder entries are stored with fileUrl === "" (empty string).
+       * Files always have a non-empty fileUrl like "/uploads/xxx.pdf".
+       * We collect unique folder names from folder-placeholder docs only.
+       */
+      const folderSet = new Set();
+      data.forEach(item => {
+        if (item.fileUrl === "" || item.fileUrl === null || item.fileUrl === undefined) {
+          if (item.folder) folderSet.add(item.folder);
+        }
+      });
+
+      const select = document.getElementById("folderSelect");
+      select.innerHTML = '<option value="General">General</option>';
+
+      folderSet.forEach(folder => {
+        const opt = document.createElement("option");
+        opt.value       = folder;
+        opt.textContent = folder;
+        select.appendChild(opt);
+      });
+
+    } catch (err) {
+      console.error("loadFolders error:", err);
+    }
+  }
+
+  // Load folders on page init (so dropdown is pre-populated)
   loadFolders();
-  showUpload();
-}
 
-// upload
-document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+  // ── Create folder ───────────────────────────────────────────────────────────
+  async function createFolder() {
+    const folderName = document.getElementById("folderName").value.trim();
+    const msgEl      = document.getElementById("folderMsg");
+    const btn        = document.getElementById("createFolderBtn");
 
-  const formData = new FormData(e.target);
-  const folder = document.getElementById("folderSelect").value;
+    if (!folderName) {
+      showMsg(msgEl, "Please enter a folder name ❌", true);
+      return;
+    }
 
-  formData.append("folder", folder || "General");
+    btn.disabled    = true;
+    btn.textContent = "Creating…";
 
-  const res = await fetch("http://localhost:5000/upload", {
-    method: "POST",
-    headers: { Authorization: token },
-    body: formData
+    try {
+      const res = await fetch("http://localhost:5000/create-folder", {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": token
+        },
+        body: JSON.stringify({ folder: folderName })
+      });
+
+      if (res.status === 401) { handleUnauthorized(); return; }
+
+      const data = await res.json();
+
+      showMsg(msgEl, data.message, !res.ok);
+
+      if (res.ok) {
+        document.getElementById("folderName").value = "";
+        loadFolders();   // refresh dropdown
+        setTimeout(showUpload, 800); // switch to upload panel
+      }
+
+    } catch (err) {
+      showMsg(msgEl, "Error creating folder ❌", true);
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = "✅ Create Folder";
+    }
+  }
+
+  // ── Upload file ─────────────────────────────────────────────────────────────
+  document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const msgEl = document.getElementById("message");
+    const btn   = document.getElementById("uploadBtn");
+    btn.disabled    = true;
+    btn.textContent = "Uploading…";
+    showMsg(msgEl, "", false);
+
+    const formData = new FormData(e.target);
+
+    // Append selected folder from dropdown
+    const folder = document.getElementById("folderSelect").value || "General";
+    formData.set("folder", folder);   // use set() to avoid duplicates if already added
+
+    try {
+      const res = await fetch("http://localhost:5000/upload", {
+        method:  "POST",
+        headers: { "Authorization": token },
+        // ⚠️ Do NOT set Content-Type here; browser sets it with boundary for multipart
+        body:    formData
+      });
+
+      if (res.status === 401) { handleUnauthorized(); return; }
+
+      const data = await res.json();
+      showMsg(msgEl, data.message, !res.ok);
+
+      if (res.ok) {
+        e.target.reset();
+        loadFolders();  // in case a new folder was typed
+      }
+
+    } catch (err) {
+      showMsg(msgEl, "Upload failed. Check server connection ❌", true);
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = "⬆ Upload";
+    }
   });
-
-  const data = await res.json();
-  document.getElementById("message").innerText = data.message;
-
-  e.target.reset();
-});
 </script>
 
 </body>
