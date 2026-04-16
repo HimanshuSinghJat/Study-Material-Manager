@@ -291,9 +291,9 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ── SPA fallback – serve index.html for any unknown GET route ───────────────
+// ── SPA fallback – serve login.html for any unknown GET route ───────────────
 // (So that refreshing /login.html etc. works when deployed)
-app.get("/*", (req, res) => {
+app.get("(.*)", (req, res) => {
   res.sendFile(path.join(__dirname, "frontend", "login.html"));
 });
 
