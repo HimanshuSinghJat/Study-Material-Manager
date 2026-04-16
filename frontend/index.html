@@ -6,258 +6,67 @@
   <title>Study Material Manager – Upload</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #f0f2f5; }
 
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-      background: #f0f2f5;
-    }
+    /* SIDEBAR */
+    .sidebar { width: 230px; min-height: 100vh; background: #1e2a38; color: white; padding: 28px 20px; display: flex; flex-direction: column; flex-shrink: 0; }
+    .logo { font-size: 18px; font-weight: 700; margin-bottom: 36px; line-height: 1.4; }
+    .menu a { display: flex; align-items: center; gap: 10px; color: #bdc3c7; margin: 10px 0; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px; transition: background 0.2s, color 0.2s; }
+    .menu a:hover, .menu a.active { background: rgba(255,255,255,0.1); color: white; }
 
-    /* ── SIDEBAR ─────────────────────────────────────────────────────────── */
-    .sidebar {
-      width: 230px;
-      min-height: 100vh;
-      background: #1e2a38;
-      color: white;
-      padding: 28px 20px;
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-    }
+    /* MAIN */
+    .main { flex: 1; overflow-y: auto; padding: 30px; position: relative; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .topbar h1 { font-size: 22px; color: #2c3e50; }
 
-    .logo {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 36px;
-      line-height: 1.4;
-    }
-
-    .menu a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: #bdc3c7;
-      margin: 10px 0;
-      text-decoration: none;
-      padding: 9px 12px;
-      border-radius: 8px;
-      font-size: 14px;
-      transition: background 0.2s, color 0.2s;
-    }
-
-    .menu a:hover,
-    .menu a.active {
-      background: rgba(255,255,255,0.1);
-      color: white;
-    }
-
-    /* ── MAIN ────────────────────────────────────────────────────────────── */
-    .main {
-      flex: 1;
-      overflow-y: auto;
-      padding: 30px;
-      position: relative;
-    }
-
-    /* ── TOPBAR ──────────────────────────────────────────────────────────── */
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 28px;
-    }
-
-    .topbar h1 {
-      font-size: 22px;
-      color: #2c3e50;
-    }
-
-    /* ── AVATAR / DROPDOWN ───────────────────────────────────────────────── */
+    /* AVATAR */
     .user-box { position: relative; }
-
-    #avatar {
-      width: 42px;
-      height: 42px;
-      background: linear-gradient(135deg, #3498db, #2980b9);
-      color: white;
-      font-weight: 700;
-      font-size: 18px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      user-select: none;
-      transition: transform 0.15s;
-    }
-
+    #avatar { width: 42px; height: 42px; background: linear-gradient(135deg, #3498db, #2980b9); color: white; font-weight: 700; font-size: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: transform 0.15s; }
     #avatar:hover { transform: scale(1.08); }
-
-    .dropdown {
-      display: none;
-      position: absolute;
-      right: 0;
-      top: 52px;
-      background: white;
-      padding: 14px;
-      border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-      width: 210px;
-      z-index: 999;
-    }
-
+    .dropdown { display: none; position: absolute; right: 0; top: 52px; background: white; padding: 14px; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); width: 210px; z-index: 999; }
     .dropdown.open { display: block; }
-
-    .dropdown p {
-      font-size: 13px;
-      color: #555;
-      margin: 4px 0;
-      word-break: break-all;
-    }
-
+    .dropdown p { font-size: 13px; color: #555; margin: 4px 0; word-break: break-all; }
     .dropdown p strong { color: #2c3e50; }
-
     .dropdown hr { margin: 10px 0; border: none; border-top: 1px solid #eee; }
-
-    .dropdown button {
-      width: 100%;
-      margin-top: 6px;
-      padding: 8px;
-      border: none;
-      background: #f5f5f5;
-      cursor: pointer;
-      border-radius: 6px;
-      font-size: 13px;
-      transition: background 0.2s;
-    }
-
+    .dropdown button { width: 100%; margin-top: 6px; padding: 8px; border: none; background: #f5f5f5; cursor: pointer; border-radius: 6px; font-size: 13px; transition: background 0.2s; }
     .dropdown button:hover { background: #e8e8e8; }
-
-    .dropdown .logout-btn {
-      background: #fdecea;
-      color: #e74c3c;
-      font-weight: 600;
-    }
-
+    .dropdown .logout-btn { background: #fdecea; color: #e74c3c; font-weight: 600; }
     .dropdown .logout-btn:hover { background: #fbd7d4; }
 
-    /* ── CARD ────────────────────────────────────────────────────────────── */
-    .card {
-      background: white;
-      padding: 30px;
-      border-radius: 14px;
-      max-width: 480px;
-      margin: 0 auto;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-    }
+    /* CARD */
+    .card { background: white; padding: 30px; border-radius: 14px; max-width: 480px; margin: 0 auto; box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+    .card h2 { text-align: center; color: #2c3e50; margin-bottom: 22px; font-size: 20px; }
 
-    .card h2 {
-      text-align: center;
-      color: #2c3e50;
-      margin-bottom: 22px;
-      font-size: 20px;
-    }
-
-    /* ── ACTION BUTTONS ──────────────────────────────────────────────────── */
-    .actions {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 11px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-      transition: opacity 0.2s;
-    }
-
+    /* ACTIONS */
+    .actions { display: flex; gap: 12px; margin-bottom: 18px; }
+    .btn { flex: 1; padding: 11px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: opacity 0.2s; }
     .btn:hover { opacity: 0.85; }
-
     .create-btn { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
     .upload-btn { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
 
-    /* ── FOLDER BOX ──────────────────────────────────────────────────────── */
-    #folderBox {
-      display: none;
-      margin-top: 6px;
-      animation: fadeIn 0.2s ease;
-    }
+    /* PANELS */
+    #folderBox { display: none; margin-top: 6px; animation: fadeIn 0.2s ease; }
+    #uploadBox { display: none; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* ── UPLOAD BOX ──────────────────────────────────────────────────────── */
-    #uploadBox {
-      display: none;
-      animation: fadeIn 0.2s ease;
-    }
+    /* FIELDS */
+    .field { margin-top: 12px; }
+    .field label { display: block; font-size: 12px; color: #666; font-weight: 600; margin-bottom: 4px; }
+    .field input, .field select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 14px; outline: none; transition: border 0.2s; }
+    .field input:focus, .field select:focus { border-color: #1abc9c; }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ── FORM INPUTS ─────────────────────────────────────────────────────── */
-    .field {
-      margin-top: 12px;
-    }
-
-    .field label {
-      display: block;
-      font-size: 12px;
-      color: #666;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .field input,
-    .field select {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1.5px solid #ddd;
-      font-size: 14px;
-      outline: none;
-      transition: border 0.2s;
-    }
-
-    .field input:focus,
-    .field select:focus { border-color: #1abc9c; }
-
-    .submit-btn {
-      width: 100%;
-      padding: 11px;
-      margin-top: 18px;
-      border: none;
-      border-radius: 8px;
-      background: linear-gradient(135deg, #1abc9c, #16a085);
-      color: white;
-      font-weight: 700;
-      font-size: 15px;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-
-    .submit-btn:hover    { opacity: 0.88; }
+    .submit-btn { width: 100%; padding: 11px; margin-top: 18px; border: none; border-radius: 8px; background: linear-gradient(135deg, #1abc9c, #16a085); color: white; font-weight: 700; font-size: 15px; cursor: pointer; transition: opacity 0.2s; }
+    .submit-btn:hover { opacity: 0.88; }
     .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-    #message {
-      margin-top: 14px;
-      text-align: center;
-      font-size: 14px;
-      min-height: 18px;
-    }
+    #message { margin-top: 14px; text-align: center; font-size: 14px; min-height: 18px; }
     .msg-ok  { color: #27ae60; }
     .msg-err { color: #e74c3c; }
+    #folderMsg { margin-top: 10px; font-size: 13px; text-align: center; min-height: 16px; }
   </style>
 </head>
 <body>
 
-<!-- ── SIDEBAR ───────────────────────────────────────────────────────────── -->
 <div class="sidebar">
   <div class="logo">📚 Study Material<br>Manager</div>
   <div class="menu">
@@ -266,16 +75,11 @@
   </div>
 </div>
 
-<!-- ── MAIN ──────────────────────────────────────────────────────────────── -->
 <div class="main">
-
-  <!-- Topbar -->
   <div class="topbar">
     <h1>Upload Study Material</h1>
-
     <div class="user-box">
       <div id="avatar" onclick="toggleMenu(event)"></div>
-
       <div id="dropdown" class="dropdown">
         <p><strong id="userName"></strong></p>
         <p id="userEmail"></p>
@@ -286,7 +90,6 @@
     </div>
   </div>
 
-  <!-- Card -->
   <div class="card">
     <h2>📤 Upload Material</h2>
 
@@ -295,11 +98,11 @@
       <button class="btn upload-btn" onclick="showUpload()">⬆ Upload File</button>
     </div>
 
-    <!-- FOLDER CREATION BOX -->
+    <!-- FOLDER BOX -->
     <div id="folderBox">
       <div class="field">
         <label>Folder Name</label>
-        <input type="text" id="folderName" placeholder="e.g. Notes">
+        <input type="text" id="folderName" placeholder="e.g. Physics Notes">
       </div>
       <button class="submit-btn" id="createFolderBtn" onclick="createFolder()">✅ Create Folder</button>
       <p id="folderMsg"></p>
@@ -314,186 +117,141 @@
             <option value="General">General</option>
           </select>
         </div>
-
         <div class="field">
           <label>Title</label>
           <input type="text" name="title" placeholder="e.g. Chapter 1 Notes" required>
         </div>
-
         <div class="field">
           <label>Subject</label>
-          <input type="text" name="subject" placeholder="e.g. Notes" required>
+          <input type="text" name="subject" placeholder="e.g. Physics" required>
         </div>
-
         <div class="field">
           <label>Choose File</label>
           <input type="file" name="file" required>
         </div>
-
         <button type="submit" class="submit-btn" id="uploadBtn">⬆ Upload</button>
       </div>
     </form>
 
     <p id="message"></p>
   </div>
-
 </div>
 
 <script>
-  const BASE_URL = "https://study-material-manager.onrender.com";
-
-  // ── Auth guard ─────────────────────────────────────────
+  // ── Auth guard ──────────────────────────────────────────────────────────────
   const token = localStorage.getItem("token");
   if (!token) window.location.href = "login.html";
 
-  // ── User info ──────────────────────────────────────────
+  // ── User info ───────────────────────────────────────────────────────────────
   const userName  = localStorage.getItem("userName")  || "User";
   const userEmail = localStorage.getItem("userEmail") || "";
-
   document.getElementById("avatar").textContent    = userName.charAt(0).toUpperCase();
   document.getElementById("userName").textContent  = userName;
   document.getElementById("userEmail").textContent = userEmail;
 
-  function toggleMenu(e) {
-    e.stopPropagation();
-    document.getElementById("dropdown").classList.toggle("open");
-  }
+  // ── Dropdown ────────────────────────────────────────────────────────────────
+  function toggleMenu(e) { e.stopPropagation(); document.getElementById("dropdown").classList.toggle("open"); }
+  document.addEventListener("click", () => document.getElementById("dropdown").classList.remove("open"));
+  function logout()      { localStorage.clear(); window.location.href = "login.html"; }
+  function showProfile() { alert(`Name: ${userName}\nEmail: ${userEmail}`); }
 
-  document.addEventListener("click", () => {
-    document.getElementById("dropdown").classList.remove("open");
-  });
-
-  function logout() {
-    localStorage.clear();
-    window.location.href = "login.html";
-  }
-
-  function showProfile() {
-    alert(`Name: ${userName}\nEmail: ${userEmail}`);
-  }
-
+  // ── Panel toggles ───────────────────────────────────────────────────────────
   function showFolder() {
     document.getElementById("folderBox").style.display = "block";
     document.getElementById("uploadBox").style.display = "none";
+    document.getElementById("message").textContent     = "";
   }
-
   function showUpload() {
     document.getElementById("uploadBox").style.display = "block";
     document.getElementById("folderBox").style.display = "none";
+    document.getElementById("message").textContent     = "";
     loadFolders();
   }
 
-  function showMsg(el, text, isError) {
-    el.textContent = text;
-    el.className   = isError ? "msg-err" : "msg-ok";
-  }
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  function showMsg(el, text, isError) { el.textContent = text; el.className = isError ? "msg-err" : "msg-ok"; }
+  function handleUnauthorized() { alert("Session expired. Please login again."); localStorage.clear(); window.location.href = "login.html"; }
 
-  function handleUnauthorized() {
-    alert("Session expired. Please login again.");
-    localStorage.clear();
-    window.location.href = "login.html";
-  }
-
-  // ── LOAD FOLDERS ───────────────────────────────────────
+  // ── Load folders into dropdown ──────────────────────────────────────────────
   async function loadFolders() {
     try {
-      const res = await fetch(`${BASE_URL}/materials`, {
-        headers: { Authorization: token }
-      });
-
-      if (res.status === 401) return handleUnauthorized();
+      // ✅ Relative URL — works everywhere
+      const res = await fetch("/materials", { headers: { "Authorization": token } });
+      if (res.status === 401) { handleUnauthorized(); return; }
 
       const data = await res.json();
 
       const folderSet = new Set();
       data.forEach(item => {
-        if (!item.fileUrl) folderSet.add(item.folder);
+        if (item.fileUrl === "" || item.fileUrl === null || item.fileUrl === undefined) {
+          if (item.folder) folderSet.add(item.folder);
+        }
       });
 
       const select = document.getElementById("folderSelect");
       select.innerHTML = '<option value="General">General</option>';
-
       folderSet.forEach(folder => {
         const opt = document.createElement("option");
-        opt.value = folder;
-        opt.textContent = folder;
+        opt.value = opt.textContent = folder;
         select.appendChild(opt);
       });
-
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error("loadFolders error:", err); }
   }
-
   loadFolders();
 
-  // ── CREATE FOLDER ──────────────────────────────────────
+  // ── Create folder ───────────────────────────────────────────────────────────
   async function createFolder() {
     const folderName = document.getElementById("folderName").value.trim();
-    const msgEl = document.getElementById("folderMsg");
+    const msgEl      = document.getElementById("folderMsg");
+    const btn        = document.getElementById("createFolderBtn");
+    if (!folderName) { showMsg(msgEl, "Please enter a folder name ❌", true); return; }
 
-    if (!folderName) {
-      showMsg(msgEl, "Enter folder name ❌", true);
-      return;
-    }
-
+    btn.disabled = true;
+    btn.textContent = "Creating…";
     try {
-      const res = await fetch(`${BASE_URL}/create-folder`, {
+      // ✅ Relative URL
+      const res  = await fetch("/create-folder", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token
-        },
+        headers: { "Content-Type": "application/json", "Authorization": token },
         body: JSON.stringify({ folder: folderName })
       });
-
-      if (res.status === 401) return handleUnauthorized();
-
+      if (res.status === 401) { handleUnauthorized(); return; }
       const data = await res.json();
       showMsg(msgEl, data.message, !res.ok);
-
       if (res.ok) {
         document.getElementById("folderName").value = "";
         loadFolders();
         setTimeout(showUpload, 800);
       }
-
-    } catch {
-      showMsg(msgEl, "Error ❌", true);
-    }
+    } catch (err) { showMsg(msgEl, "Error creating folder ❌", true); }
+    finally { btn.disabled = false; btn.textContent = "✅ Create Folder"; }
   }
 
-  // ── UPLOAD FILE ────────────────────────────────────────
+  // ── Upload file ─────────────────────────────────────────────────────────────
   document.getElementById("uploadForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-
     const msgEl = document.getElementById("message");
+    const btn   = document.getElementById("uploadBtn");
+    btn.disabled = true; btn.textContent = "Uploading…";
+    showMsg(msgEl, "", false);
 
     const formData = new FormData(e.target);
-    formData.set("folder", document.getElementById("folderSelect").value);
+    formData.set("folder", document.getElementById("folderSelect").value || "General");
 
     try {
-      const res = await fetch(`${BASE_URL}/upload`, {
+      // ✅ Relative URL — no Content-Type header (browser sets multipart boundary)
+      const res  = await fetch("/upload", {
         method: "POST",
-        headers: { Authorization: token },
+        headers: { "Authorization": token },
         body: formData
       });
-
-      if (res.status === 401) return handleUnauthorized();
-
+      if (res.status === 401) { handleUnauthorized(); return; }
       const data = await res.json();
       showMsg(msgEl, data.message, !res.ok);
-
-      if (res.ok) {
-        e.target.reset();
-        loadFolders();
-      }
-
-    } catch {
-      showMsg(msgEl, "Upload failed ❌", true);
-    }
+      if (res.ok) { e.target.reset(); loadFolders(); }
+    } catch (err) { showMsg(msgEl, "Upload failed. Check server connection ❌", true); }
+    finally { btn.disabled = false; btn.textContent = "⬆ Upload"; }
   });
 </script>
-
 </body>
 </html>

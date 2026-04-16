@@ -1,48 +1,88 @@
 require("dotenv").config();
 
-const express  = require("express");
-const mongoose = require("mongoose");
-const cors     = require("cors");
-const multer   = require("multer");
-const path     = require("path");
-const bcrypt   = require("bcrypt");
-const jwt      = require("jsonwebtoken");
+const express    = require("express");
+const mongoose   = require("mongoose");
+const cors       = require("cors");
+const multer     = require("multer");
+const path       = require("path");
+const fs         = require("fs");
+const bcrypt     = require("bcrypt");
+const jwt        = require("jsonwebtoken");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 const Material = require("./models/Material");
 const User     = require("./models/User");
 
 const app = express();
 
+// ================= CORS =================
+// In production set FRONTEND_URL env var on Render to your actual domain.
+// Locally it defaults to * so any origin is allowed.
+const allowedOrigin = process.env.FRONTEND_URL || "*";
+
 app.use(cors({
-  origin: "https://study-material-manager.vercel.app",
-  credentials: true
+  origin: allowedOrigin === "*" ? "*" : allowedOrigin,
+  credentials: allowedOrigin !== "*"
 }));
+
 app.use(express.json());
 
-// ================= FILE UPLOAD =================
-const storage = multer.diskStorage({
-  destination: "./uploads/",
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
+// ================= CLOUDINARY CONFIG =================
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const upload = multer({ storage });
+// ================= FILE UPLOAD =================
+// Use Cloudinary in production, local disk in dev (if Cloudinary keys missing)
+let upload;
 
-// Serve uploaded files as static assets
-app.use("/uploads", express.static("uploads"));
+if (
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+) {
+  // ── CLOUDINARY storage (Render / production) ──────────────────────────────
+  const cloudStorage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder:         "study-material-manager",
+      resource_type:  "auto",   // accepts PDFs, images, etc.
+      allowed_formats: ["pdf", "png", "jpg", "jpeg", "gif", "docx", "pptx", "xlsx", "mp4", "zip"]
+    }
+  });
+  upload = multer({ storage: cloudStorage });
+  console.log("🌥  Using Cloudinary storage");
+} else {
+  // ── Local disk storage (development fallback) ─────────────────────────────
+  const uploadDir = path.join(__dirname, "uploads");
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+  const diskStorage = multer.diskStorage({
+    destination: uploadDir,
+    filename: (req, file, cb) => {
+      cb(null, Date.now() + path.extname(file.originalname));
+    }
+  });
+  upload = multer({ storage: diskStorage });
+  app.use("/uploads", express.static(uploadDir));
+  console.log("💾  Using local disk storage");
+}
+
+// ================= SERVE FRONTEND =================
+// Express serves the HTML/CSS/JS files from ./frontend
+// This means index.html, login.html, signup.html, view.html are all reachable
+// at the same domain as the API → no CORS needed for API calls from frontend.
+app.use(express.static(path.join(__dirname, "frontend")));
 
 // ================= DATABASE =================
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected ✅"))
-  .catch(err => console.log("MongoDB Error:", err));
+  .catch(err => console.error("MongoDB Error:", err));
 
 // ================= AUTH MIDDLEWARE =================
-/*
- * Reads the token from the Authorization header.
- * Frontend sends: Authorization: <token>  (raw JWT, no "Bearer " prefix)
- * Sets req.user = { userId: <string> } for use in protected routes.
- */
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
 
@@ -56,7 +96,7 @@ const verifyToken = (req, res, next) => {
   try {
     const verified = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Normalise: JWT payload uses { userId } — convert ObjectId to string
+    // Normalise userId to string (avoids ObjectId comparison bugs)
     req.user = { userId: verified.userId.toString() };
 
     next();
@@ -68,12 +108,12 @@ const verifyToken = (req, res, next) => {
 
 // ================= ROUTES =================
 
-// Health check
-app.get("/", (req, res) => {
-  res.send("Server is running 🚀");
+// Health check (Render pings this to check the service is alive)
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// ================= GET MATERIALS (user-isolated) =================
+// ── GET MATERIALS (user-isolated) ──────────────────────────────────────────
 app.get("/materials", verifyToken, async (req, res) => {
   try {
     const materials = await Material.find({ userId: req.user.userId });
@@ -84,7 +124,7 @@ app.get("/materials", verifyToken, async (req, res) => {
   }
 });
 
-// ================= CREATE FOLDER =================
+// ── CREATE FOLDER ───────────────────────────────────────────────────────────
 app.post("/create-folder", verifyToken, async (req, res) => {
   try {
     const { folder } = req.body;
@@ -95,26 +135,23 @@ app.post("/create-folder", verifyToken, async (req, res) => {
 
     const folderName = folder.trim();
 
-    // Per-user folder uniqueness check
     const exists = await Material.findOne({
-      folder: folderName,
-      userId: req.user.userId,
-      fileUrl: ""        // only check folder-placeholder entries
+      folder:  folderName,
+      userId:  req.user.userId,
+      fileUrl: ""
     });
 
     if (exists) {
       return res.status(409).json({ message: "Folder already exists ⚠️" });
     }
 
-    const newFolder = new Material({
+    await new Material({
       title:   "folder",
       subject: "folder",
       folder:  folderName,
       fileUrl: "",
       userId:  req.user.userId
-    });
-
-    await newFolder.save();
+    }).save();
 
     res.json({ message: "Folder created ✅" });
 
@@ -124,13 +161,9 @@ app.post("/create-folder", verifyToken, async (req, res) => {
   }
 });
 
-// ================= UPLOAD FILE =================
+// ── UPLOAD FILE ─────────────────────────────────────────────────────────────
 app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   try {
-
-    // 🔥 ADD THIS LINE HERE
-    console.log("TOKEN USER:", req.user);
-
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded ❌" });
     }
@@ -141,15 +174,18 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
       return res.status(400).json({ message: "Title and subject are required ❌" });
     }
 
-    const newMaterial = new Material({
+    // Cloudinary returns req.file.path (full URL); local disk returns filename
+    const fileUrl = req.file.path
+      ? req.file.path                             // Cloudinary: full https:// URL
+      : `/uploads/${req.file.filename}`;          // local disk: relative path
+
+    await new Material({
       title:   title.trim(),
       subject: subject.trim(),
       folder:  (folder || "General").trim(),
-      fileUrl: `/uploads/${req.file.filename}`,
+      fileUrl,
       userId:  req.user.userId
-    });
-
-    await newMaterial.save();
+    }).save();
 
     res.json({ message: "File uploaded successfully ✅" });
 
@@ -158,7 +194,8 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     res.status(500).json({ message: "Error uploading file ❌" });
   }
 });
-// ================= DELETE MATERIAL =================
+
+// ── DELETE MATERIAL ─────────────────────────────────────────────────────────
 app.delete("/materials/:id", verifyToken, async (req, res) => {
   try {
     const material = await Material.findById(req.params.id);
@@ -167,9 +204,23 @@ app.delete("/materials/:id", verifyToken, async (req, res) => {
       return res.status(404).json({ message: "Material not found ❌" });
     }
 
-    // Ownership check — compare strings to avoid ObjectId type mismatch
     if (material.userId.toString() !== req.user.userId) {
       return res.status(403).json({ message: "Not authorized to delete this item ❌" });
+    }
+
+    // If file is on Cloudinary, delete it there too
+    if (material.fileUrl && material.fileUrl.includes("cloudinary.com")) {
+      try {
+        // Extract public_id from the Cloudinary URL
+        const parts   = material.fileUrl.split("/");
+        const file    = parts[parts.length - 1];           // e.g. abc123.pdf
+        const folder  = parts[parts.length - 2];           // e.g. study-material-manager
+        const pubId   = `${folder}/${file.split(".")[0]}`; // folder/name_without_ext
+        await cloudinary.uploader.destroy(pubId, { resource_type: "raw" });
+      } catch (cdnErr) {
+        // Non-fatal: log but still delete from DB
+        console.warn("Cloudinary delete warning:", cdnErr.message);
+      }
     }
 
     await Material.findByIdAndDelete(req.params.id);
@@ -181,7 +232,7 @@ app.delete("/materials/:id", verifyToken, async (req, res) => {
   }
 });
 
-// ================= SIGNUP =================
+// ── SIGNUP ──────────────────────────────────────────────────────────────────
 app.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -206,7 +257,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// ================= LOGIN =================
+// ── LOGIN ───────────────────────────────────────────────────────────────────
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -221,7 +272,6 @@ app.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Wrong password ❌" });
 
-    // 🔑 JWT payload uses { userId } — must match what verifyToken reads
     const token = jwt.sign(
       { userId: user._id.toString() },
       process.env.JWT_SECRET,
@@ -239,6 +289,12 @@ app.post("/login", async (req, res) => {
     console.error("POST /login error:", err);
     res.status(500).json({ message: "Error logging in ❌" });
   }
+});
+
+// ── SPA fallback – serve index.html for any unknown GET route ───────────────
+// (So that refreshing /login.html etc. works when deployed)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "index.html"));
 });
 
 // ================= START SERVER =================
