@@ -249,7 +249,7 @@
       const data = await res.json();
       showMsg(msgEl, data.message, !res.ok);
       if (res.ok) { e.target.reset(); loadFolders(); }
-    } catch (err) { showMsg(msgEl, "Upload failed. Check server connection ❌", true); }
+    } catch (err) { showMsg(msgEl, "Server waking up... please wait ⏳", true); }
     finally { btn.disabled = false; btn.textContent = "⬆ Upload"; }
   });
 </script>
